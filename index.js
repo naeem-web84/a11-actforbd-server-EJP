@@ -57,6 +57,7 @@ async function run() {
   try {
     const eventsCollection = client.db('actForBD').collection('events');
     const joinedEventsCollection = client.db('actForBD').collection('joinedEvent');
+    const feedbackCollection = client.db('actForBD').collection('feedback');
 
 
     app.post("/events", verifyFirebaseToken, async (req, res) => {
@@ -64,6 +65,29 @@ async function run() {
       const result = await eventsCollection.insertOne(newEvent);
       res.send(result);
     });
+
+
+    // POST feedback (no auth needed)
+    app.post('/feedback', async (req, res) => {
+      const feedback = req.body;
+      try {
+        const result = await feedbackCollection.insertOne(feedback);
+        res.send(result);
+      } catch (err) {
+        res.status(500).send({ message: "Failed to submit feedback" });
+      }
+    });
+
+    // GET all feedback (admin use - optional)
+    app.get('/feedback', async (req, res) => {
+      try {
+        const allFeedback = await feedbackCollection.find().sort({ createdAt: -1 }).toArray();
+        res.send(allFeedback);
+      } catch (err) {
+        res.status(500).send({ message: "Error fetching feedback" });
+      }
+    });
+
 
     app.get('/events', async (req, res) => {
       const { eventType, search } = req.query;
